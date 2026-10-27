@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Telnyx Traffic Control</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">TELNYX INFERENCE · LIVE MODEL SHOWDOWN</p>
+          <h1>Traffic Control</h1>
+          <p class="lede">Two models. One request stream. Every decision counts.</p>
+        </div>
+        <button id="start" class="start-button">Start simulation <span>→</span></button>
+      </header>
+
+      <section class="worldbar" aria-label="Simulation status">
+        <div class="status-dot"><i></i><span id="status">Ready for traffic</span></div>
+        <div class="world-stats"><span id="request-count">0 / 12 requests</span><span id="event">Awaiting launch</span></div>
+      </section>
+
+      <section class="arena">
+        <article class="model-card" data-model="flash">
+          <div class="model-head"><div><span class="model-kicker">MODEL 01</span><h2>GLM 5.3 Flash</h2></div><div class="score"><small>SCORE</small><strong id="score-flash">0</strong></div></div>
+          <div class="map" id="map-flash"><div class="traffic-source">INCOMING<br /><b id="inbound-flash">—</b></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
+          <div class="decision"><span class="decision-label">LAST DECISION</span><strong id="decision-flash">Waiting for input</strong><p id="reason-flash">Start the simulation to send the first request.</p></div>
+          <div class="log" id="log-flash"></div>
+        </article>
+
+        <div class="versus">VS</div>
+
+        <article class="model-card" data-model="kimi">
+          <div class="model-head"><div><span class="model-kicker">MODEL 02</span><h2>Kimi K3</h2></div><div class="score"><small>SCORE</small><strong id="score-kimi">0</strong></div></div>
+          <div class="map" id="map-kimi"><div class="traffic-source">INCOMING<br /><b id="inbound-kimi">—</b></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
+          <div class="decision"><span class="decision-label">LAST DECISION</span><strong id="decision-kimi">Waiting for input</strong><p id="reason-kimi">Start the simulation to send the first request.</p></div>
+          <div class="log" id="log-kimi"></div>
+        </article>
+      </section>
+
+      <section class="footer-panel"><div><span class="label">SIMULATION RULES</span><p>Route for region, urgency, capacity, and cost. The world state is identical for both models.</p></div><div class="legend"><span><i class="priority"></i>Priority</span><span><i class="default"></i>Default</span><span><i class="flex"></i>Flex</span></div></section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

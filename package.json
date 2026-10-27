@@ -1,0 +1,10 @@
+{
+  "name": "telnyx-traffic-control",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A live two-model Telnyx Inference traffic-control showdown.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

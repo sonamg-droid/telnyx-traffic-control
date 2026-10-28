@@ -24,7 +24,25 @@ function json(res, status, body) {
 }
 
 function normalizeDecision(value) {
-  const parsed = typeof value === "string" ? JSON.parse(value) : value;
+  let parsed = value;
+  if (typeof value === "string") {
+    const text = value.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const start = text.indexOf("{");
+      const end = text.lastIndexOf("}");
+      if (start >= 0 && end > start) {
+        try { parsed = JSON.parse(text.slice(start, end + 1)); } catch { parsed = null; }
+      }
+      if (!parsed) {
+        const region = text.match(/\b(AMER|EU|APAC)\b/i)?.[1]?.toUpperCase();
+        const tier = text.match(/\b(priority|default|flex)\b/i)?.[1]?.toLowerCase();
+        if (region) parsed = { decision: /\breject\b/i.test(text) ? "reject" : "route", target_region: region, service_tier: tier || "default", reason: text.slice(0, 140) };
+      }
+    }
+  }
+  if (!parsed || typeof parsed !== "object") throw new Error("Model response did not contain a usable route");
   const decisionValue = String(parsed?.decision || parsed?.action || "route").toLowerCase();
   const regionValue = String(parsed?.target_region || parsed?.targetRegion || parsed?.region || "").toUpperCase();
   const tierValue = String(parsed?.service_tier || parsed?.serviceTier || parsed?.tier || "").toLowerCase();

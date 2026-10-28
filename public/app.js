@@ -1,9 +1,9 @@
 const turns = [
-  "My order was supposed to arrive today. Can you check it?",
-  "I'm in Berlin now and need an update urgently.",
-  "I'm flying to Singapore tonight. Keep helping me there.",
-  "Please summarize the delivery history and keep the cost low.",
-  "I'm back in New York. Give me the final status.",
+  "My order #TX-2048 was supposed to arrive today. What happened?",
+  "I'm in Berlin now. Can you tell me the latest estimate?",
+  "I'm flying to Singapore tonight. What should I do if it arrives late?",
+  "Can you summarize the delivery history in one sentence?",
+  "I'm back in New York. Give me the final status and next step.",
 ];
 
 const state = {
@@ -11,6 +11,11 @@ const state = {
   kimi: { responses: 0, errors: 0, tokens: 0, latency: 0, messages: [] },
 };
 const $ = (id) => document.getElementById(id);
+
+function formatReply(text) {
+  const escaped = text.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+  return escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br />");
+}
 
 function addCustomerMessage(text, index) {
   const thread = $("thread");
@@ -37,8 +42,8 @@ function updateModel(modelKey, result, index) {
   s.latency += result.latencyMs;
   s.tokens += result.tokens || 0;
   const label = modelKey === "flash" ? "flash" : "kimi";
-  $("reply-" + label).textContent = result.text;
-  $("thread-reply-" + label + "-" + index).textContent = result.text;
+  $("reply-" + label).innerHTML = formatReply(result.text);
+  $("thread-reply-" + label + "-" + index).innerHTML = formatReply(result.text);
   $("turns-" + label).textContent = `${s.responses}/${turns.length}`;
   $("errors-" + label).textContent = s.errors;
   $("tokens-" + label).textContent = s.tokens || "—";

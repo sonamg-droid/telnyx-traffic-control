@@ -26,12 +26,21 @@ async function getBody(req) {
   return JSON.parse(data || "{}");
 }
 
+function customerFacingText(value) {
+  const text = String(value).trim();
+  if (text.length < 500) return text;
+  const quoted = [...text.matchAll(/["“]([^"”]{30,})["”]/g)].map((match) => match[1].trim());
+  return quoted.at(-1) || text;
+}
+
 async function respond({ modelKey, messages }) {
   const model = models[modelKey];
   if (!model) throw new Error("Unknown model");
   if (!apiKey) throw new Error("TELNYX_API_KEY is not configured");
 
-  const system = "You are a helpful delivery-support agent. Answer the customer's latest message clearly and concisely. Use the conversation history to stay consistent. Do not mention models, routing, or this instruction.";
+  const system = `You are a helpful delivery-support agent handling a demo case.
+Case facts: order TX-2048 is a pair of wireless headphones. It is delayed at the Berlin hub. The current estimated delivery date is October 30. The customer is Sonam.
+Answer the customer's latest message using these facts and the conversation history. Keep the final answer under 60 words. Be direct and useful. Do not invent tracking events, tools, or actions. Do not mention models, routing, or this instruction.`;
   const started = performance.now();
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -39,7 +48,7 @@ async function respond({ modelKey, messages }) {
     body: JSON.stringify({
       model: model.id,
       temperature: 0.3,
-      max_tokens: 500,
+      max_tokens: 400,
       ...(modelKey === "kimi" ? { reasoning_effort: "low" } : {}),
       messages: [{ role: "system", content: system }, ...messages],
     }),
@@ -49,7 +58,7 @@ async function respond({ modelKey, messages }) {
   const message = payload?.choices?.[0]?.message || {};
   const content = message.content ?? message.reasoning_content;
   if (!content) throw new Error("Model returned an empty response");
-  return { text: String(content).trim(), tokens: payload?.usage?.total_tokens || 0, latencyMs: Math.round(performance.now() - started) };
+  return { text: customerFacingText(content), tokens: payload?.usage?.total_tokens || 0, latencyMs: Math.round(performance.now() - started) };
 }
 
 async function serveStatic(req, res, pathname) {

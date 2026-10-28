@@ -22,12 +22,7 @@ function worldFor(index) {
 
 function addCustomerMessage(turn) {
   const thread = $("thread");
-  thread.querySelector(".empty-thread")?.remove();
-  const message = document.createElement("div");
-  message.className = "message customer-message";
-  message.innerHTML = `<span class="message-label">CUSTOMER · ${turn.id}</span><p>${turn.message}</p><small>${turn.region} · ${turn.urgency}</small>`;
-  thread.append(message);
-  thread.scrollTop = thread.scrollHeight;
+  thread.innerHTML = `<div class="message customer-message"><span class="message-label">CUSTOMER · ${turn.id}</span><p>${turn.message}</p><small>Expected region: ${turn.region} · ${turn.urgency}</small></div><div class="turn-results"></div>`;
 }
 
 function render(modelKey, turn, decision) {
@@ -37,7 +32,7 @@ function render(modelKey, turn, decision) {
   $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
   $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
   $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = decision.decision === "route" ? decision.target_region : "—";
+  $("decision-" + modelKey).textContent = decision.decision === "route" ? decision.target_region : "NO ROUTE";
   $("decision-status-" + modelKey).textContent = decision.decision !== "route" ? "No usable route" : correct ? "Correct region" : `Expected ${turn.region}`;
   $("decision-status-" + modelKey).className = `decision-status ${correct ? "is-correct" : "is-wrong"}`;
   $("reason-" + modelKey).textContent = decision.reason;
@@ -51,8 +46,7 @@ function render(modelKey, turn, decision) {
   const result = document.createElement("div");
   result.className = correct ? "model-result correct" : "model-result incorrect";
   result.textContent = `${modelKey === "flash" ? "Flash" : "Kimi"}: ${decision.target_region || "invalid"}`;
-  $("thread").append(result);
-  $("thread").scrollTop = $("thread").scrollHeight;
+  $("thread").querySelector(".turn-results").append(result);
 }
 
 function recordError(modelKey, turn, error) {
@@ -61,7 +55,7 @@ function recordError(modelKey, turn, error) {
   $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
   $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
   $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = "—";
+  $("decision-" + modelKey).textContent = "NO ROUTE";
   $("decision-status-" + modelKey).textContent = "Invalid response";
   $("decision-status-" + modelKey).className = "decision-status is-invalid";
   $("reason-" + modelKey).textContent = error.message;
@@ -71,7 +65,7 @@ function recordError(modelKey, turn, error) {
   const result = document.createElement("div");
   result.className = "model-result incorrect";
   result.textContent = `${modelKey === "flash" ? "Flash" : "Kimi"}: invalid response`;
-  $("thread").append(result);
+  $("thread").querySelector(".turn-results").append(result);
 }
 
 async function getDecision(modelKey, turn, world) {

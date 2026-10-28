@@ -68,10 +68,9 @@ async function decide({ modelKey, request, world }) {
   if (!model) throw new Error("Unknown model");
   if (!apiKey) throw new Error("TELNYX_API_KEY is not configured");
 
-  const system = `You are a traffic-control agent in a deterministic demo. Make one routing decision.
-Return JSON only, with exactly these fields:
-{"decision":"route"|"reject","target_region":"AMER"|"EU"|"APAC","service_tier":"priority"|"default"|"flex","reason":"short explanation"}
-Rules: preserve the request's required region when possible; use priority for urgent requests, flex for cost-sensitive work, and default otherwise. Never invent regions or fields. Do not include markdown.`;
+  const system = `You are routing one turn of a global delivery-support conversation.
+Reply with exactly one region name and nothing else: AMER, EU, or APAC.
+Choose the region specified by the request. Do not explain your answer. Do not return JSON, markdown, or any other words.`;
   const user = JSON.stringify({ request, current_world: world });
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",

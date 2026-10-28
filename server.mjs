@@ -15,46 +15,9 @@ const models = {
   kimi: { id: "moonshotai/Kimi-K3", label: "Kimi K3" },
 };
 
-const allowedRegions = new Set(["AMER", "EU", "APAC"]);
-const allowedTiers = new Set(["priority", "default", "flex"]);
-
 function json(res, status, body) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
   res.end(JSON.stringify(body));
-}
-
-function normalizeDecision(value) {
-  let parsed = value;
-  if (typeof value === "string") {
-    const text = value.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      const start = text.indexOf("{");
-      const end = text.lastIndexOf("}");
-      if (start >= 0 && end > start) {
-        try { parsed = JSON.parse(text.slice(start, end + 1)); } catch { parsed = null; }
-      }
-      if (!parsed) {
-        const region = text.match(/\b(AMER|EU|APAC)\b/i)?.[1]?.toUpperCase();
-        const tier = text.match(/\b(priority|default|flex)\b/i)?.[1]?.toLowerCase();
-        if (region) parsed = { decision: /\breject\b/i.test(text) ? "reject" : "route", target_region: region, service_tier: tier || "default", reason: text.slice(0, 140) };
-      }
-    }
-  }
-  if (!parsed || typeof parsed !== "object") throw new Error("Model response did not contain a usable route");
-  const decisionValue = String(parsed?.decision || parsed?.action || "route").toLowerCase();
-  const regionValue = String(parsed?.target_region || parsed?.targetRegion || parsed?.region || "").toUpperCase();
-  const tierValue = String(parsed?.service_tier || parsed?.serviceTier || parsed?.tier || "").toLowerCase();
-  const decision = decisionValue === "reject" ? "reject" : "route";
-  const targetRegion = allowedRegions.has(regionValue) ? regionValue : "AMER";
-  const serviceTier = allowedTiers.has(tierValue) ? tierValue : "default";
-  return {
-    decision,
-    target_region: targetRegion,
-    service_tier: serviceTier,
-    reason: String(parsed?.reason || "Selected the best available route.").slice(0, 140),
-  };
 }
 
 async function getBody(req) {
@@ -63,32 +26,30 @@ async function getBody(req) {
   return JSON.parse(data || "{}");
 }
 
-async function decide({ modelKey, request, world }) {
+async function respond({ modelKey, messages }) {
   const model = models[modelKey];
   if (!model) throw new Error("Unknown model");
   if (!apiKey) throw new Error("TELNYX_API_KEY is not configured");
 
-  const system = `You are routing one turn of a global delivery-support conversation.
-Reply with exactly one region name and nothing else: AMER, EU, or APAC.
-Choose the region specified by the request. Do not explain your answer. Do not return JSON, markdown, or any other words.`;
-  const user = JSON.stringify({ request, current_world: world });
+  const system = "You are a helpful delivery-support agent. Answer the customer's latest message clearly and concisely. Use the conversation history to stay consistent. Do not mention models, routing, or this instruction.";
+  const started = performance.now();
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
     body: JSON.stringify({
       model: model.id,
-      temperature: 0,
-      max_tokens: 180,
-      response_format: { type: "json_object" },
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      temperature: 0.3,
+      max_tokens: 500,
+      ...(modelKey === "kimi" ? { reasoning_effort: "low" } : {}),
+      messages: [{ role: "system", content: system }, ...messages],
     }),
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload?.error?.message || `Telnyx request failed (${response.status})`);
   const message = payload?.choices?.[0]?.message || {};
-  // Kimi currently returns structured JSON in reasoning_content for this format.
   const content = message.content ?? message.reasoning_content;
-  return normalizeDecision(content);
+  if (!content) throw new Error("Model returned an empty response");
+  return { text: String(content).trim(), tokens: payload?.usage?.total_tokens || 0, latencyMs: Math.round(performance.now() - started) };
 }
 
 async function serveStatic(req, res, pathname) {
@@ -110,11 +71,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/api/health") {
     return json(res, 200, { ok: true, liveInference: Boolean(apiKey), models });
   }
-  if (req.method === "POST" && url.pathname === "/api/decide") {
+  if (req.method === "POST" && url.pathname === "/api/respond") {
     try {
       const body = await getBody(req);
-      const decision = await decide(body);
-      return json(res, 200, { decision });
+      return json(res, 200, await respond(body));
     } catch (error) {
       return json(res, 502, { error: error.message });
     }

@@ -1,116 +1,108 @@
 const turns = [
-  { id: "TURN-01", message: "My order was supposed to arrive today. Can you check it?", region: "EU", urgency: "normal", size: "small" },
-  { id: "TURN-02", message: "I'm in Berlin now and need an update urgently.", region: "EU", urgency: "urgent", size: "small" },
-  { id: "TURN-03", message: "I'm flying to Singapore tonight. Keep helping me there.", region: "APAC", urgency: "urgent", size: "large" },
-  { id: "TURN-04", message: "Please summarize the delivery history and keep the cost low.", region: "APAC", urgency: "cost-sensitive", size: "large" },
-  { id: "TURN-05", message: "I'm back in New York. Give me the final status.", region: "AMER", urgency: "normal", size: "small" },
+  "My order was supposed to arrive today. Can you check it?",
+  "I'm in Berlin now and need an update urgently.",
+  "I'm flying to Singapore tonight. Keep helping me there.",
+  "Please summarize the delivery history and keep the cost low.",
+  "I'm back in New York. Give me the final status.",
 ];
 
 const state = {
-  flash: { correct: 0, errors: 0 },
-  kimi: { correct: 0, errors: 0 },
+  flash: { responses: 0, errors: 0, tokens: 0, latency: 0, messages: [] },
+  kimi: { responses: 0, errors: 0, tokens: 0, latency: 0, messages: [] },
 };
 const $ = (id) => document.getElementById(id);
 
-function worldFor(index) {
-  return {
-    tick: index + 1,
-    pressure: index === 1 ? "EU congestion" : index === 2 || index === 3 ? "APAC burst" : "normal",
-    capacity: { AMER: index === 4 ? "tight" : "available", EU: index === 1 ? "tight" : "available", APAC: index >= 2 && index <= 3 ? "tight" : "available" },
-  };
-}
-
-function addCustomerMessage(turn) {
+function addCustomerMessage(text, index) {
   const thread = $("thread");
-  thread.innerHTML = `<div class="message customer-message"><span class="message-label">CUSTOMER · ${turn.id}</span><p>${turn.message}</p><small>Expected region: ${turn.region} · ${turn.urgency}</small></div><div class="turn-results"></div>`;
+  thread.querySelector(".empty-thread")?.remove();
+  const message = document.createElement("div");
+  message.className = "message customer-message";
+  message.innerHTML = `<span class="message-label">CUSTOMER · TURN-${String(index + 1).padStart(2, "0")}</span><p>${text}</p>`;
+  thread.append(message);
+  thread.scrollTop = thread.scrollHeight;
 }
 
-function render(modelKey, turn, decision) {
+function addModelReplies(index) {
+  const thread = $("thread");
+  const row = document.createElement("div");
+  row.className = "reply-row";
+  row.innerHTML = `<div class="reply-chip"><span>GLM 5.3 Flash</span><p id="thread-reply-flash-${index}">…</p></div><div class="reply-chip"><span>Kimi K3</span><p id="thread-reply-kimi-${index}">…</p></div>`;
+  thread.append(row);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function updateModel(modelKey, result, index) {
   const s = state[modelKey];
-  const correct = decision.decision === "route" && decision.target_region === turn.region;
-  if (correct) s.correct += 1;
-  $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
-  $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
-  $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = decision.decision === "route" ? decision.target_region : "NO ROUTE";
-  $("decision-status-" + modelKey).textContent = decision.decision !== "route" ? "No usable route" : correct ? "Correct region" : `Expected ${turn.region}`;
-  $("decision-status-" + modelKey).className = `decision-status ${correct ? "is-correct" : "is-wrong"}`;
-  $("reason-" + modelKey).textContent = decision.reason;
-  $("task-" + modelKey).textContent = turn.message;
-  $("taskmeta-" + modelKey).textContent = `${turn.region} · ${turn.urgency}`;
-  $("inbound-" + modelKey).textContent = turn.id;
-  $("map-" + modelKey).querySelectorAll(".nodes span").forEach((node) => {
-    node.classList.toggle("active", node.dataset.region === decision.target_region);
-    node.classList.toggle("warning", node.dataset.region === turn.region && node.dataset.region !== decision.target_region);
-  });
-  const result = document.createElement("div");
-  result.className = correct ? "model-result correct" : "model-result incorrect";
-  result.textContent = `${modelKey === "flash" ? "Flash" : "Kimi"}: ${decision.target_region || "invalid"}`;
-  $("thread").querySelector(".turn-results").append(result);
+  s.responses += 1;
+  s.latency += result.latencyMs;
+  s.tokens += result.tokens || 0;
+  const label = modelKey === "flash" ? "flash" : "kimi";
+  $("reply-" + label).textContent = result.text;
+  $("thread-reply-" + label + "-" + index).textContent = result.text;
+  $("turns-" + label).textContent = `${s.responses}/${turns.length}`;
+  $("errors-" + label).textContent = s.errors;
+  $("tokens-" + label).textContent = s.tokens || "—";
+  $("latency-" + label).textContent = `${(result.latencyMs / 1000).toFixed(1)}s`;
 }
 
-function recordError(modelKey, turn, error) {
+function recordError(modelKey, error, index) {
   const s = state[modelKey];
   s.errors += 1;
-  $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
-  $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
-  $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = "NO ROUTE";
-  $("decision-status-" + modelKey).textContent = "Invalid response";
-  $("decision-status-" + modelKey).className = "decision-status is-invalid";
-  $("reason-" + modelKey).textContent = error.message;
-  $("task-" + modelKey).textContent = turn.message;
-  $("taskmeta-" + modelKey).textContent = `${turn.region} · ${turn.urgency}`;
-  $("inbound-" + modelKey).textContent = turn.id;
-  const result = document.createElement("div");
-  result.className = "model-result incorrect";
-  result.textContent = `${modelKey === "flash" ? "Flash" : "Kimi"}: invalid response`;
-  $("thread").querySelector(".turn-results").append(result);
+  const label = modelKey === "flash" ? "flash" : "kimi";
+  const message = `No response: ${error.message}`;
+  $("reply-" + label).textContent = message;
+  $("thread-reply-" + label + "-" + index).textContent = message;
+  $("turns-" + label).textContent = `${s.responses}/${turns.length}`;
+  $("errors-" + label).textContent = s.errors;
 }
 
-async function getDecision(modelKey, turn, world) {
-  const response = await fetch("/api/decide", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ modelKey, request: turn, world }) });
+async function getResponse(modelKey, messages) {
+  const response = await fetch("/api/respond", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ modelKey, messages }) });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Inference request failed");
-  return payload.decision;
+  return payload;
 }
 
 async function run() {
   const button = $("start");
   button.disabled = true;
-  button.textContent = "Conversation is moving…";
-  state.flash = { correct: 0, errors: 0 };
-  state.kimi = { correct: 0, errors: 0 };
+  button.textContent = "Conversation is live…";
+  state.flash = { responses: 0, errors: 0, tokens: 0, latency: 0, messages: [] };
+  state.kimi = { responses: 0, errors: 0, tokens: 0, latency: 0, messages: [] };
   $("thread").innerHTML = "";
   ["flash", "kimi"].forEach((key) => {
-    $("score-" + key).textContent = "0%";
-    $("route-" + key).textContent = `0/${turns.length}`;
-    $("errors-" + key).textContent = "0";
-    $("task-" + key).textContent = "Waiting for the next message";
-    $("taskmeta-" + key).textContent = "—";
-    $("decision-" + key).textContent = "—";
-    $("decision-status-" + key).textContent = "Waiting for input";
-    $("decision-status-" + key).className = "decision-status";
+    const label = key === "flash" ? "flash" : "kimi";
+    $("reply-" + label).textContent = "Waiting for the next customer message.";
+    $("latency-" + label).textContent = "—";
+    $("turns-" + label).textContent = `0/${turns.length}`;
+    $("errors-" + label).textContent = "0";
+    $("tokens-" + label).textContent = "—";
   });
   $("status").textContent = "Customer conversation in progress";
+  const histories = { flash: [], kimi: [] };
   for (let index = 0; index < turns.length; index += 1) {
-    const turn = turns[index];
-    addCustomerMessage(turn);
+    const customerMessage = { role: "user", content: turns[index] };
+    addCustomerMessage(turns[index], index);
+    addModelReplies(index);
     $("turn-count").textContent = `${index + 1} / ${turns.length} turns`;
-    $("event").textContent = `${turn.region} · ${turn.urgency} · both models routing`;
-    const world = worldFor(index);
+    $("event").textContent = "Both models are answering the same message";
     await Promise.all(["flash", "kimi"].map(async (key) => {
+      const messages = [...histories[key], customerMessage];
+      const started = performance.now();
       try {
-        render(key, turn, await getDecision(key, turn, world));
+        const result = await getResponse(key, messages);
+        result.latencyMs = result.latencyMs || Math.round(performance.now() - started);
+        updateModel(key, result, index);
+        histories[key].push(customerMessage, { role: "assistant", content: result.text });
       } catch (error) {
-        recordError(key, turn, error);
+        recordError(key, error, index);
+        histories[key].push(customerMessage);
       }
     }));
-    await new Promise((resolve) => setTimeout(resolve, 650));
+    await new Promise((resolve) => setTimeout(resolve, 800));
   }
-  const winner = state.flash.correct === state.kimi.correct ? "Conversation routing is tied" : state.flash.correct > state.kimi.correct ? "GLM 5.3 Flash leads" : "Kimi K3 leads";
-  $("status").textContent = `${winner} · conversation complete`;
-  $("event").textContent = `Flash ${state.flash.correct}/${turns.length} correct · Kimi ${state.kimi.correct}/${turns.length} correct`;
+  $("status").textContent = "Conversation complete · live responses captured";
+  $("event").textContent = `Flash ${state.flash.responses}/${turns.length} · Kimi ${state.kimi.responses}/${turns.length}`;
   button.disabled = false;
   button.innerHTML = 'Run conversation again <span>↻</span>';
 }

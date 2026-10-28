@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Telnyx Global Support</title>
+    <title>Telnyx Conversation Showdown</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -11,8 +11,8 @@
       <header class="topbar">
         <div>
           <p class="eyebrow">TELNYX INFERENCE · LIVE MODEL SHOWDOWN</p>
-          <h1>Global Support</h1>
-          <p class="lede">One customer conversation. Two models. Three regions.</p>
+          <h1>Delivery Desk</h1>
+          <p class="lede">One real conversation. Two models. Every response from Telnyx Inference.</p>
         </div>
         <button id="start" class="start-button">Start conversation <span>→</span></button>
       </header>
@@ -23,29 +23,27 @@
       </section>
 
       <section class="conversation-panel">
-        <div class="section-heading"><div><span class="label">THE CONVERSATION</span><h2>Delivery support thread</h2></div><span class="thread-id">THREAD · DELIVERY-2048</span></div>
-        <div class="thread" id="thread"><div class="empty-thread">Press start to receive the first customer message.</div></div>
+        <div class="section-heading"><div><span class="label">THE APPLICATION</span><h2>Delivery support conversation</h2></div><span class="thread-id">LIVE · TELNYX INFERENCE</span></div>
+        <div class="thread" id="thread"><div class="empty-thread">Press start to send the first customer message.</div></div>
       </section>
 
       <section class="arena">
         <article class="model-card" data-model="flash">
-          <div class="model-head"><div><span class="model-kicker">MODEL 01</span><h2>GLM 5.3 Flash</h2></div><div class="score"><small>ROUTING ACCURACY</small><strong id="score-flash">—</strong></div></div>
-          <div class="map" id="map-flash"><div class="traffic-source"><span>CURRENT MESSAGE</span><b id="task-flash">Waiting for traffic</b><small id="taskmeta-flash">—</small><em>ROUTE <strong id="inbound-flash">—</strong></em></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
-          <div class="decision"><span class="decision-label">ROUTED TO</span><strong id="decision-flash">—</strong><span class="decision-status" id="decision-status-flash">Waiting for input</span><p id="reason-flash">This model has not routed the conversation yet.</p></div>
-          <div class="metrics"><span><b id="route-flash">0/5</b> correct regions</span><span><b id="errors-flash">0</b> invalid responses</span></div>
+          <div class="model-head"><div><span class="model-kicker">MODEL 01</span><h2>GLM 5.3 Flash</h2></div><div class="score"><small>RESPONSE TIME</small><strong id="latency-flash">—</strong></div></div>
+          <div class="model-output"><span class="decision-label">LATEST RESPONSE</span><p id="reply-flash">Waiting for the first customer message.</p></div>
+          <div class="metrics"><span><b id="turns-flash">0/5</b> responses</span><span><b id="errors-flash">0</b> errors</span><span><b id="tokens-flash">—</b> tokens</span></div>
         </article>
 
         <div class="versus">VS</div>
 
         <article class="model-card" data-model="kimi">
-          <div class="model-head"><div><span class="model-kicker">MODEL 02</span><h2>Kimi K3</h2></div><div class="score"><small>ROUTING ACCURACY</small><strong id="score-kimi">—</strong></div></div>
-          <div class="map" id="map-kimi"><div class="traffic-source"><span>CURRENT MESSAGE</span><b id="task-kimi">Waiting for traffic</b><small id="taskmeta-kimi">—</small><em>ROUTE <strong id="inbound-kimi">—</strong></em></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
-          <div class="decision"><span class="decision-label">ROUTED TO</span><strong id="decision-kimi">—</strong><span class="decision-status" id="decision-status-kimi">Waiting for input</span><p id="reason-kimi">This model has not routed the conversation yet.</p></div>
-          <div class="metrics"><span><b id="route-kimi">0/5</b> correct regions</span><span><b id="errors-kimi">0</b> invalid responses</span></div>
+          <div class="model-head"><div><span class="model-kicker">MODEL 02</span><h2>Kimi K3</h2></div><div class="score"><small>RESPONSE TIME</small><strong id="latency-kimi">—</strong></div></div>
+          <div class="model-output"><span class="decision-label">LATEST RESPONSE</span><p id="reply-kimi">Waiting for the first customer message.</p></div>
+          <div class="metrics"><span><b id="turns-kimi">0/5</b> responses</span><span><b id="errors-kimi">0</b> errors</span><span><b id="tokens-kimi">—</b> tokens</span></div>
         </article>
       </section>
 
-      <section class="footer-panel"><div><span class="label">THE GOAL</span><p>Keep the same conversation close to the customer as the customer moves between regions.</p></div><div class="legend"><span><i class="priority"></i>Priority</span><span><i class="default"></i>Default</span><span><i class="flex"></i>Flex</span></div></section>
+      <section class="footer-panel"><div><span class="label">WHAT YOU ARE SEEING</span><p>Both models receive the same conversation and answer through the live Telnyx OpenAI-compatible endpoint. No simulated routing or quality score.</p></div></section>
     </main>
     <script src="/app.js"></script>
   </body>

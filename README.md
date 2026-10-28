@@ -1,8 +1,8 @@
 # Telnyx Traffic Control
 
-A live, two-model Inference showdown for video demos. GLM 5.3 Flash and Kimi K3 receive the same five-turn delivery-support conversation and choose which Telnyx region should handle each turn.
+A live, two-model Inference showdown for video demos. GLM 5.3 Flash and Kimi K3 receive the same five-turn delivery-support conversation and generate real replies through Telnyx Inference.
 
-This is a demo, not a representation of Telnyx's internal production routing logic. The model calls are live; the conversation, regional world, and expected routing are deterministic.
+The model calls and responses are live. The customer messages are deterministic so the two models can be compared on the same conversation. The app reports observable response counts, latency, token usage when returned, and errors; it does not manufacture a quality score or claim a winner.
 
 ## Run locally
 

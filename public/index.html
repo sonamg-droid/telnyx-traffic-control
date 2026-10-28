@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Telnyx Traffic Control</title>
+    <title>Telnyx Global Support</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -11,38 +11,41 @@
       <header class="topbar">
         <div>
           <p class="eyebrow">TELNYX INFERENCE · LIVE MODEL SHOWDOWN</p>
-          <h1>Traffic Control</h1>
-          <p class="lede">Two models. One request stream. Every decision counts.</p>
+          <h1>Global Support</h1>
+          <p class="lede">One customer conversation. Two models. Three regions.</p>
         </div>
-        <button id="start" class="start-button">Start simulation <span>→</span></button>
+        <button id="start" class="start-button">Start conversation <span>→</span></button>
       </header>
 
-      <section class="worldbar" aria-label="Simulation status">
-        <div class="status-dot"><i></i><span id="status">Ready for traffic</span></div>
-        <div class="world-stats"><span id="request-count">0 / 12 requests</span><span id="event">Awaiting launch</span></div>
+      <section class="worldbar" aria-label="Conversation status">
+        <div class="status-dot"><i></i><span id="status">Ready for the customer</span></div>
+        <div class="world-stats"><span id="turn-count">0 / 5 turns</span><span id="event">Awaiting launch</span></div>
+      </section>
+
+      <section class="conversation-panel">
+        <div class="section-heading"><div><span class="label">THE CONVERSATION</span><h2>Delivery support thread</h2></div><span class="thread-id">THREAD · DELIVERY-2048</span></div>
+        <div class="thread" id="thread"><div class="empty-thread">Press start to receive the first customer message.</div></div>
       </section>
 
       <section class="arena">
         <article class="model-card" data-model="flash">
-          <div class="model-head"><div><span class="model-kicker">MODEL 01</span><h2>GLM 5.3 Flash</h2></div><div class="score"><small>ROUTING SCORE</small><strong id="score-flash">0%</strong></div></div>
-          <div class="map" id="map-flash"><div class="traffic-source"><span>TASK</span><b id="task-flash">Waiting for traffic</b><small id="taskmeta-flash">—</small><em>INCOMING <strong id="inbound-flash">—</strong></em></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
-          <div class="decision"><span class="decision-label">LAST DECISION</span><strong id="decision-flash">Waiting for input</strong><p id="reason-flash">Start the simulation to send the first request.</p></div>
-          <div class="metrics"><span><b id="valid-flash">0/12</b> valid</span><span><b id="route-flash">0/12</b> correct route</span><span><b id="errors-flash">0</b> errors</span></div>
-          <div class="log" id="log-flash"></div>
+          <div class="model-head"><div><span class="model-kicker">MODEL 01</span><h2>GLM 5.3 Flash</h2></div><div class="score"><small>ROUTING ACCURACY</small><strong id="score-flash">—</strong></div></div>
+          <div class="map" id="map-flash"><div class="traffic-source"><span>CURRENT MESSAGE</span><b id="task-flash">Waiting for traffic</b><small id="taskmeta-flash">—</small><em>ROUTE <strong id="inbound-flash">—</strong></em></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
+          <div class="decision"><span class="decision-label">MODEL ROUTE</span><strong id="decision-flash">Waiting for input</strong><p id="reason-flash">This model has not routed the conversation yet.</p></div>
+          <div class="metrics"><span><b id="route-flash">0/5</b> correct routes</span><span><b id="errors-flash">0</b> invalid</span></div>
         </article>
 
         <div class="versus">VS</div>
 
         <article class="model-card" data-model="kimi">
-          <div class="model-head"><div><span class="model-kicker">MODEL 02</span><h2>Kimi K3</h2></div><div class="score"><small>ROUTING SCORE</small><strong id="score-kimi">0%</strong></div></div>
-          <div class="map" id="map-kimi"><div class="traffic-source"><span>TASK</span><b id="task-kimi">Waiting for traffic</b><small id="taskmeta-kimi">—</small><em>INCOMING <strong id="inbound-kimi">—</strong></em></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
-          <div class="decision"><span class="decision-label">LAST DECISION</span><strong id="decision-kimi">Waiting for input</strong><p id="reason-kimi">Start the simulation to send the first request.</p></div>
-          <div class="metrics"><span><b id="valid-kimi">0/12</b> valid</span><span><b id="route-kimi">0/12</b> correct route</span><span><b id="errors-kimi">0</b> errors</span></div>
-          <div class="log" id="log-kimi"></div>
+          <div class="model-head"><div><span class="model-kicker">MODEL 02</span><h2>Kimi K3</h2></div><div class="score"><small>ROUTING ACCURACY</small><strong id="score-kimi">—</strong></div></div>
+          <div class="map" id="map-kimi"><div class="traffic-source"><span>CURRENT MESSAGE</span><b id="task-kimi">Waiting for traffic</b><small id="taskmeta-kimi">—</small><em>ROUTE <strong id="inbound-kimi">—</strong></em></div><div class="route-line"></div><div class="nodes"><span data-region="AMER">AMER</span><span data-region="EU">EU</span><span data-region="APAC">APAC</span></div></div>
+          <div class="decision"><span class="decision-label">MODEL ROUTE</span><strong id="decision-kimi">Waiting for input</strong><p id="reason-kimi">This model has not routed the conversation yet.</p></div>
+          <div class="metrics"><span><b id="route-kimi">0/5</b> correct routes</span><span><b id="errors-kimi">0</b> invalid</span></div>
         </article>
       </section>
 
-      <section class="footer-panel"><div><span class="label">HOW TO READ THIS</span><p>Routing score averages 100 points per request: 65 for the correct region and 35 for the correct service tier. Invalid responses score zero.</p></div><div class="legend"><span><i class="priority"></i>Priority</span><span><i class="default"></i>Default</span><span><i class="flex"></i>Flex</span></div></section>
+      <section class="footer-panel"><div><span class="label">THE GOAL</span><p>Keep the same conversation close to the customer as the customer moves between regions.</p></div><div class="legend"><span><i class="priority"></i>Priority</span><span><i class="default"></i>Default</span><span><i class="flex"></i>Flex</span></div></section>
     </main>
     <script src="/app.js"></script>
   </body>

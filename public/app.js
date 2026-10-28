@@ -1,82 +1,77 @@
-const requests = [
-  { id: "REQ-01", region: "AMER", urgency: "urgent", size: "large", profile: "Voice orchestration" },
-  { id: "REQ-02", region: "EU", urgency: "normal", size: "small", profile: "Support reply" },
-  { id: "REQ-03", region: "APAC", urgency: "cost-sensitive", size: "large", profile: "Batch summary" },
-  { id: "REQ-04", region: "AMER", urgency: "normal", size: "small", profile: "JSON extraction" },
-  { id: "REQ-05", region: "EU", urgency: "urgent", size: "large", profile: "Agent decision" },
-  { id: "REQ-06", region: "APAC", urgency: "normal", size: "small", profile: "Code repair" },
-  { id: "REQ-07", region: "AMER", urgency: "cost-sensitive", size: "large", profile: "Document processing" },
-  { id: "REQ-08", region: "EU", urgency: "normal", size: "small", profile: "Classification" },
-  { id: "REQ-09", region: "APAC", urgency: "urgent", size: "large", profile: "Realtime agent" },
-  { id: "REQ-10", region: "AMER", urgency: "normal", size: "small", profile: "Tool selection" },
-  { id: "REQ-11", region: "EU", urgency: "cost-sensitive", size: "large", profile: "Long context" },
-  { id: "REQ-12", region: "APAC", urgency: "normal", size: "small", profile: "Structured output" },
+const turns = [
+  { id: "TURN-01", message: "My order was supposed to arrive today. Can you check it?", region: "EU", urgency: "normal", size: "small" },
+  { id: "TURN-02", message: "I'm in Berlin now and need an update urgently.", region: "EU", urgency: "urgent", size: "small" },
+  { id: "TURN-03", message: "I'm flying to Singapore tonight. Keep helping me there.", region: "APAC", urgency: "urgent", size: "large" },
+  { id: "TURN-04", message: "Please summarize the delivery history and keep the cost low.", region: "APAC", urgency: "cost-sensitive", size: "large" },
+  { id: "TURN-05", message: "I'm back in New York. Give me the final status.", region: "AMER", urgency: "normal", size: "small" },
 ];
 
 const state = {
-  flash: { points: 0, valid: 0, correctRoutes: 0, errors: 0, decisions: [] },
-  kimi: { points: 0, valid: 0, correctRoutes: 0, errors: 0, decisions: [] },
+  flash: { correct: 0, errors: 0 },
+  kimi: { correct: 0, errors: 0 },
 };
 const $ = (id) => document.getElementById(id);
 
 function worldFor(index) {
   return {
     tick: index + 1,
-    pressure: index >= 4 && index <= 6 ? "EU congestion" : index >= 8 ? "APAC burst" : "normal",
-    capacity: { AMER: index === 7 ? "tight" : "available", EU: index >= 4 && index <= 6 ? "tight" : "available", APAC: index >= 8 ? "tight" : "available" },
+    pressure: index === 1 ? "EU congestion" : index === 2 || index === 3 ? "APAC burst" : "normal",
+    capacity: { AMER: index === 4 ? "tight" : "available", EU: index === 1 ? "tight" : "available", APAC: index >= 2 && index <= 3 ? "tight" : "available" },
   };
 }
 
-function score(request, decision) {
-  if (decision.decision === "reject") return { points: 0, valid: true, correctRoute: false };
-  const region = decision.target_region === request.region;
-  const tier = request.urgency === "urgent" ? decision.service_tier === "priority" : request.urgency === "cost-sensitive" ? decision.service_tier === "flex" : decision.service_tier === "default";
-  const points = region && tier ? 100 : region ? 65 : tier ? 35 : 10;
-  return { points, valid: true, correctRoute: region };
+function addCustomerMessage(turn) {
+  const thread = $("thread");
+  thread.querySelector(".empty-thread")?.remove();
+  const message = document.createElement("div");
+  message.className = "message customer-message";
+  message.innerHTML = `<span class="message-label">CUSTOMER · ${turn.id}</span><p>${turn.message}</p><small>${turn.region} · ${turn.urgency}</small>`;
+  thread.append(message);
+  thread.scrollTop = thread.scrollHeight;
 }
 
-function render(modelKey, request, decision, result) {
+function render(modelKey, turn, decision) {
   const s = state[modelKey];
-  s.points += result.points;
-  s.valid += result.valid ? 1 : 0;
-  s.correctRoutes += result.correctRoute ? 1 : 0;
-  s.decisions.push(decision);
-  $("score-" + modelKey).textContent = `${Math.round(s.points / requests.length)}%`;
-  $("valid-" + modelKey).textContent = `${s.valid}/${requests.length}`;
-  $("route-" + modelKey).textContent = `${s.correctRoutes}/${requests.length}`;
+  const correct = decision.decision === "route" && decision.target_region === turn.region;
+  if (correct) s.correct += 1;
+  $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
+  $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
   $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = `${decision.decision === "route" ? "Route" : "Reject"} · ${decision.target_region} · ${decision.service_tier}`;
+  $("decision-" + modelKey).textContent = decision.decision === "route" ? `Route to ${decision.target_region}` : "Invalid route · 0 points";
   $("reason-" + modelKey).textContent = decision.reason;
-  $("inbound-" + modelKey).textContent = request.id;
-  $("task-" + modelKey).textContent = request.profile;
-  $("taskmeta-" + modelKey).textContent = `${request.region} · ${request.urgency} · ${request.size}`;
+  $("task-" + modelKey).textContent = turn.message;
+  $("taskmeta-" + modelKey).textContent = `${turn.region} · ${turn.urgency}`;
+  $("inbound-" + modelKey).textContent = turn.id;
   $("map-" + modelKey).querySelectorAll(".nodes span").forEach((node) => {
     node.classList.toggle("active", node.dataset.region === decision.target_region);
-    node.classList.toggle("warning", node.dataset.region === request.region && node.dataset.region !== decision.target_region);
+    node.classList.toggle("warning", node.dataset.region === turn.region && node.dataset.region !== decision.target_region);
   });
-  const line = document.createElement("div");
-  line.innerHTML = `<b>${request.id}</b> ${request.profile} → ${decision.target_region} (${decision.service_tier})`;
-  $("log-" + modelKey).prepend(line);
+  const result = document.createElement("div");
+  result.className = correct ? "model-result correct" : "model-result incorrect";
+  result.textContent = `${modelKey === "flash" ? "Flash" : "Kimi"}: ${decision.target_region || "invalid"}`;
+  $("thread").append(result);
+  $("thread").scrollTop = $("thread").scrollHeight;
 }
 
-function recordError(modelKey, request, error) {
+function recordError(modelKey, turn, error) {
   const s = state[modelKey];
   s.errors += 1;
-  $("score-" + modelKey).textContent = `${Math.round(s.points / requests.length)}%`;
-  $("valid-" + modelKey).textContent = `${s.valid}/${requests.length}`;
-  $("route-" + modelKey).textContent = `${s.correctRoutes}/${requests.length}`;
+  $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
+  $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
   $("errors-" + modelKey).textContent = s.errors;
-  $("task-" + modelKey).textContent = request.profile;
-  $("taskmeta-" + modelKey).textContent = `${request.region} · ${request.urgency} · ${request.size}`;
-  $("inbound-" + modelKey).textContent = request.id;
   $("decision-" + modelKey).textContent = "Invalid response · 0 points";
   $("reason-" + modelKey).textContent = error.message;
-  const line = document.createElement("div"); line.className = "error"; line.textContent = `${request.id} · invalid response · 0 points`;
-  $("log-" + modelKey).prepend(line);
+  $("task-" + modelKey).textContent = turn.message;
+  $("taskmeta-" + modelKey).textContent = `${turn.region} · ${turn.urgency}`;
+  $("inbound-" + modelKey).textContent = turn.id;
+  const result = document.createElement("div");
+  result.className = "model-result incorrect";
+  result.textContent = `${modelKey === "flash" ? "Flash" : "Kimi"}: invalid response`;
+  $("thread").append(result);
 }
 
-async function getDecision(modelKey, request, world) {
-  const response = await fetch("/api/decide", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ modelKey, request, world }) });
+async function getDecision(modelKey, turn, world) {
+  const response = await fetch("/api/decide", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ modelKey, request: turn, world }) });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Inference request failed");
   return payload.decision;
@@ -85,40 +80,39 @@ async function getDecision(modelKey, request, world) {
 async function run() {
   const button = $("start");
   button.disabled = true;
-  button.textContent = "Traffic is moving…";
-  state.flash = { points: 0, valid: 0, correctRoutes: 0, errors: 0, decisions: [] };
-  state.kimi = { points: 0, valid: 0, correctRoutes: 0, errors: 0, decisions: [] };
+  button.textContent = "Conversation is moving…";
+  state.flash = { correct: 0, errors: 0 };
+  state.kimi = { correct: 0, errors: 0 };
+  $("thread").innerHTML = "";
   ["flash", "kimi"].forEach((key) => {
     $("score-" + key).textContent = "0%";
-    $("valid-" + key).textContent = `0/${requests.length}`;
-    $("route-" + key).textContent = `0/${requests.length}`;
+    $("route-" + key).textContent = `0/${turns.length}`;
     $("errors-" + key).textContent = "0";
-    $("task-" + key).textContent = "Waiting for traffic";
+    $("task-" + key).textContent = "Waiting for the next message";
     $("taskmeta-" + key).textContent = "—";
-    $("log-" + key).replaceChildren();
     $("decision-" + key).textContent = "Waiting for input";
   });
-  $("status").textContent = "Models are routing live traffic";
-  for (let index = 0; index < requests.length; index += 1) {
-    const request = requests[index];
-    $("request-count").textContent = `${index + 1} / ${requests.length} requests`;
-    $("event").textContent = `${request.id} · ${request.profile} · ${request.urgency}`;
+  $("status").textContent = "Customer conversation in progress";
+  for (let index = 0; index < turns.length; index += 1) {
+    const turn = turns[index];
+    addCustomerMessage(turn);
+    $("turn-count").textContent = `${index + 1} / ${turns.length} turns`;
+    $("event").textContent = `${turn.region} · ${turn.urgency} · both models routing`;
     const world = worldFor(index);
-    const results = await Promise.all(["flash", "kimi"].map(async (key) => {
+    await Promise.all(["flash", "kimi"].map(async (key) => {
       try {
-        const decision = await getDecision(key, request, world);
-        render(key, request, decision, score(request, decision));
+        render(key, turn, await getDecision(key, turn, world));
       } catch (error) {
-        recordError(key, request, error);
+        recordError(key, turn, error);
       }
     }));
-    await new Promise((resolve) => setTimeout(resolve, 450));
+    await new Promise((resolve) => setTimeout(resolve, 650));
   }
-  const winner = state.flash.points === state.kimi.points ? "Tie on routing score" : state.flash.points > state.kimi.points ? "GLM 5.3 Flash leads" : "Kimi K3 leads";
-  $("status").textContent = `${winner} · simulation complete`;
-  $("event").textContent = `Flash ${state.flash.valid}/${requests.length} valid · Kimi ${state.kimi.valid}/${requests.length} valid`;
+  const winner = state.flash.correct === state.kimi.correct ? "Conversation routing is tied" : state.flash.correct > state.kimi.correct ? "GLM 5.3 Flash leads" : "Kimi K3 leads";
+  $("status").textContent = `${winner} · conversation complete`;
+  $("event").textContent = `Flash ${state.flash.correct}/${turns.length} correct · Kimi ${state.kimi.correct}/${turns.length} correct`;
   button.disabled = false;
-  button.innerHTML = 'Run it again <span>↻</span>';
+  button.innerHTML = 'Run conversation again <span>↻</span>';
 }
 
 $("start").addEventListener("click", run);

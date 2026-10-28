@@ -37,7 +37,9 @@ function render(modelKey, turn, decision) {
   $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
   $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
   $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = decision.decision === "route" ? `Route to ${decision.target_region}` : "Invalid route · 0 points";
+  $("decision-" + modelKey).textContent = decision.decision === "route" ? decision.target_region : "—";
+  $("decision-status-" + modelKey).textContent = decision.decision !== "route" ? "No usable route" : correct ? "Correct region" : `Expected ${turn.region}`;
+  $("decision-status-" + modelKey).className = `decision-status ${correct ? "is-correct" : "is-wrong"}`;
   $("reason-" + modelKey).textContent = decision.reason;
   $("task-" + modelKey).textContent = turn.message;
   $("taskmeta-" + modelKey).textContent = `${turn.region} · ${turn.urgency}`;
@@ -59,7 +61,9 @@ function recordError(modelKey, turn, error) {
   $("score-" + modelKey).textContent = `${Math.round((s.correct / turns.length) * 100)}%`;
   $("route-" + modelKey).textContent = `${s.correct}/${turns.length}`;
   $("errors-" + modelKey).textContent = s.errors;
-  $("decision-" + modelKey).textContent = "Invalid response · 0 points";
+  $("decision-" + modelKey).textContent = "—";
+  $("decision-status-" + modelKey).textContent = "Invalid response";
+  $("decision-status-" + modelKey).className = "decision-status is-invalid";
   $("reason-" + modelKey).textContent = error.message;
   $("task-" + modelKey).textContent = turn.message;
   $("taskmeta-" + modelKey).textContent = `${turn.region} · ${turn.urgency}`;
@@ -90,7 +94,9 @@ async function run() {
     $("errors-" + key).textContent = "0";
     $("task-" + key).textContent = "Waiting for the next message";
     $("taskmeta-" + key).textContent = "—";
-    $("decision-" + key).textContent = "Waiting for input";
+    $("decision-" + key).textContent = "—";
+    $("decision-status-" + key).textContent = "Waiting for input";
+    $("decision-status-" + key).className = "decision-status";
   });
   $("status").textContent = "Customer conversation in progress";
   for (let index = 0; index < turns.length; index += 1) {

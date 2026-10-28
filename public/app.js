@@ -20,20 +20,7 @@ function formatReply(text) {
 function addCustomerMessage(text, index) {
   const thread = $("thread");
   thread.querySelector(".empty-thread")?.remove();
-  const message = document.createElement("div");
-  message.className = "message customer-message";
-  message.innerHTML = `<span class="message-label">CUSTOMER · TURN-${String(index + 1).padStart(2, "0")}</span><p>${text}</p>`;
-  thread.append(message);
-  thread.scrollTop = thread.scrollHeight;
-}
-
-function addModelReplies(index) {
-  const thread = $("thread");
-  const row = document.createElement("div");
-  row.className = "reply-row";
-  row.innerHTML = `<div class="reply-chip"><span>GLM 5.3 Flash</span><p id="thread-reply-flash-${index}">…</p></div><div class="reply-chip"><span>Kimi K3</span><p id="thread-reply-kimi-${index}">…</p></div>`;
-  thread.append(row);
-  thread.scrollTop = thread.scrollHeight;
+  thread.innerHTML = `<div class="message customer-message"><span class="message-label">CUSTOMER · TURN-${String(index + 1).padStart(2, "0")}</span><p>${text}</p></div>`;
 }
 
 function updateModel(modelKey, result, index) {
@@ -43,7 +30,6 @@ function updateModel(modelKey, result, index) {
   s.tokens += result.tokens || 0;
   const label = modelKey === "flash" ? "flash" : "kimi";
   $("reply-" + label).innerHTML = formatReply(result.text);
-  $("thread-reply-" + label + "-" + index).innerHTML = formatReply(result.text);
   $("turns-" + label).textContent = `${s.responses}/${turns.length}`;
   $("errors-" + label).textContent = s.errors;
   $("tokens-" + label).textContent = s.tokens || "—";
@@ -56,7 +42,6 @@ function recordError(modelKey, error, index) {
   const label = modelKey === "flash" ? "flash" : "kimi";
   const message = `No response: ${error.message}`;
   $("reply-" + label).textContent = message;
-  $("thread-reply-" + label + "-" + index).textContent = message;
   $("turns-" + label).textContent = `${s.responses}/${turns.length}`;
   $("errors-" + label).textContent = s.errors;
 }
@@ -88,7 +73,6 @@ async function run() {
   for (let index = 0; index < turns.length; index += 1) {
     const customerMessage = { role: "user", content: turns[index] };
     addCustomerMessage(turns[index], index);
-    addModelReplies(index);
     $("turn-count").textContent = `${index + 1} / ${turns.length} turns`;
     $("event").textContent = "Both models are answering the same message";
     await Promise.all(["flash", "kimi"].map(async (key) => {
